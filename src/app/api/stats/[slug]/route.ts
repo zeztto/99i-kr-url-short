@@ -72,7 +72,7 @@ export async function GET(
     totalClicks,
     createdAt: link.createdAt,
     clicksByDate: mapToSorted(clicksByDateMap, "date").sort((a, b) =>
-      a.date.localeCompare(b.date)
+      String(a.date).localeCompare(String(b.date))
     ),
     topReferers: mapToSorted(refererMap, "referer").slice(0, 10),
     countries: mapToSorted(countryMap, "country"),
