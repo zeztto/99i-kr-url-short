@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 export default function Home() {
@@ -90,12 +91,25 @@ export default function Home() {
                 {copied ? "복사됨!" : "복사"}
               </button>
             </div>
-            <a
-              href={`/${result.slug}/stats`}
-              className="text-sm text-gray-400 hover:text-gray-200 mt-2 inline-block"
-            >
-              통계 보기 →
-            </a>
+            <div className="mt-3 flex items-center gap-4 text-sm">
+              <a
+                href={result.shortUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-300 hover:text-blue-200"
+              >
+                단축 링크 열기
+              </a>
+              <Link
+                href={`/${result.slug}/stats`}
+                className="text-gray-300 hover:text-white"
+              >
+                통계 보기 →
+              </Link>
+            </div>
+            <p className="mt-3 text-sm text-gray-400">
+              통계는 단축 링크가 실제로 열려 리디렉션된 뒤부터 집계됩니다.
+            </p>
           </div>
         )}
       </div>

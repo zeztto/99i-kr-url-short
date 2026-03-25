@@ -1,0 +1,9 @@
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - heading "qqwe.kr" [level=1] [ref=e4]
+      - paragraph [ref=e5]: URL을 짧게 줄이세요
+      - generic [ref=e6]:
+        - textbox "https://example.com/very-long-url" [ref=e7]
+        - button "단축하기" [disabled] [ref=e8]
+  - alert [ref=e9]

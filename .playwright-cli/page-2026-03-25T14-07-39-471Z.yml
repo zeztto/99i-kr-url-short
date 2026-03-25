@@ -1,0 +1,20 @@
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - heading "qqwe.kr" [level=1] [ref=e4]
+      - paragraph [ref=e5]: URL을 짧게 줄이세요
+      - generic [ref=e6]:
+        - textbox "https://example.com/very-long-url" [active] [ref=e7]
+        - button "단축하기" [disabled] [ref=e8]
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - link "https://qqwe.kr/OK4lPK" [ref=e12] [cursor=pointer]:
+            - /url: https://qqwe.kr/OK4lPK
+          - button "복사" [ref=e13]
+        - generic [ref=e14]:
+          - link "단축 링크 열기" [ref=e15] [cursor=pointer]:
+            - /url: https://qqwe.kr/OK4lPK
+          - link "통계 보기 →" [ref=e16] [cursor=pointer]:
+            - /url: /OK4lPK/stats
+        - paragraph [ref=e17]: 통계는 단축 링크가 실제로 열려 리디렉션된 뒤부터 집계됩니다.
+  - alert [ref=e9]

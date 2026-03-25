@@ -29,9 +29,16 @@ export function ClicksChart({
   return (
     <ResponsiveContainer width="100%" height={200}>
       <BarChart data={data}>
-        <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-        <YAxis tick={{ fontSize: 12 }} />
-        <Tooltip />
+        <XAxis dataKey="date" tick={{ fontSize: 12, fill: "#9CA3AF" }} />
+        <YAxis tick={{ fontSize: 12, fill: "#9CA3AF" }} />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: "#1F2937",
+            border: "1px solid #374151",
+            borderRadius: "8px",
+            color: "#F3F4F6",
+          }}
+        />
         <Bar dataKey="clicks" fill="#3B82F6" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
@@ -43,7 +50,8 @@ export function PieChartCard({
 }: {
   data: { name: string; value: number }[];
 }) {
-  if (data.length === 0) return <p className="text-gray-400 text-sm">데이터 없음</p>;
+  if (data.length === 0)
+    return <p className="text-gray-500 text-sm">데이터 없음</p>;
   return (
     <ResponsiveContainer width="100%" height={200}>
       <PieChart>
@@ -57,12 +65,20 @@ export function PieChartCard({
           label={({ name, percent }) =>
             `${name ?? ""} ${((percent ?? 0) * 100).toFixed(0)}%`
           }
+          labelLine={{ stroke: "#6B7280" }}
         >
           {data.map((_, i) => (
             <Cell key={i} fill={COLORS[i % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: "#1F2937",
+            border: "1px solid #374151",
+            borderRadius: "8px",
+            color: "#F3F4F6",
+          }}
+        />
       </PieChart>
     </ResponsiveContainer>
   );

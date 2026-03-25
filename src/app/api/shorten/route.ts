@@ -4,6 +4,7 @@ import { links } from "@/lib/db/schema";
 import { generateSlug, isReservedPath } from "@/lib/slug";
 import { validateUrl } from "@/lib/url";
 import { rateLimiter } from "@/lib/rate-limit";
+import { resolvePublicBaseUrl } from "@/lib/public-url";
 
 export async function POST(request: NextRequest) {
   const ip =
@@ -31,10 +32,16 @@ export async function POST(request: NextRequest) {
 
     try {
       await db.insert(links).values({ slug, url: body.url });
-      const baseUrl = process.env.BASE_URL || "http://localhost:3000";
+      const baseUrl = resolvePublicBaseUrl(request);
       return NextResponse.json({ shortUrl: `${baseUrl}/${slug}`, slug });
-    } catch (error: any) {
-      if (error?.message?.includes("UNIQUE constraint")) continue;
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("UNIQUE constraint")
+      ) {
+        continue;
+      }
+
       throw error;
     }
   }
