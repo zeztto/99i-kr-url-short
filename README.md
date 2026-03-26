@@ -1,8 +1,8 @@
-# qqwe.kr
+# Domain-Based URL Shortener
 
-`qqwe.kr`는 긴 주소를 짧은 링크로 변환하고, 실제 클릭 이후의 유입 데이터를 가볍게 확인할 수 있는 URL 단축 서비스입니다. 로그인 없이 바로 사용할 수 있고, 생성된 링크는 `qqwe.kr/Ab12Cd` 형태의 짧은 slug로 발급됩니다.
+이 프로젝트는 긴 주소를 짧은 링크로 변환하고, 실제 클릭 이후의 유입 데이터를 가볍게 확인할 수 있는 URL 단축 서비스입니다. 로그인 없이 바로 사용할 수 있고, 생성된 링크는 `{도메인}/Ab12Cd` 형태의 짧은 slug로 발급됩니다.
 
-운영 도메인: [https://qqwe.kr](https://qqwe.kr)
+기본 운영 도메인: [https://qqwe.kr](https://qqwe.kr)
 
 ## 프로젝트 개요
 
@@ -22,7 +22,7 @@
 
 ### 2. 리디렉션 기반 클릭 집계
 
-- `qqwe.kr/{slug}` 요청 시 원본 URL을 조회한 뒤 `302`로 리디렉션합니다.
+- `{도메인}/{slug}` 요청 시 원본 URL을 조회한 뒤 `302`로 리디렉션합니다.
 - 브라우저가 영구 캐싱하지 않도록 `301` 대신 `302`를 사용합니다.
 - 리디렉션 응답 이후 `after()` 훅에서 클릭 로그를 비동기로 저장해 체감 속도를 유지합니다.
 
@@ -108,7 +108,7 @@
 
 ```json
 {
-  "shortUrl": "https://qqwe.kr/Ab12Cd",
+  "shortUrl": "https://your-domain.kr/Ab12Cd",
   "slug": "Ab12Cd"
 }
 ```
@@ -147,15 +147,41 @@
 
 ### 1. 환경 변수
 
-프로젝트 루트에 `.env.local` 파일을 만들고 아래 값을 넣습니다.
+프로젝트 루트에서 `.env.example`을 `.env.local`로 복사한 뒤 아래 값을 환경에 맞게 수정합니다.
 
 ```env
 TURSO_DATABASE_URL=libsql://your-db.turso.io
 TURSO_AUTH_TOKEN=your-token
 BASE_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_DOMAIN=qqwe.kr
+NEXT_PUBLIC_SITE_NAME=qqwe.kr
+NEXT_PUBLIC_SITE_TITLE=qqwe.kr - URL 단축 서비스
+NEXT_PUBLIC_SITE_DESCRIPTION=긴 URL을 짧게 줄이고 클릭 통계를 확인하세요
+NEXT_PUBLIC_SITE_TAGLINE=URL을 짧게 줄이세요
 ```
 
-`BASE_URL`은 단축 URL 응답 본문에 들어갈 서비스 기준 주소입니다.
+`BASE_URL`은 단축 URL 응답 본문에 들어갈 서비스 기준 주소입니다. `NEXT_PUBLIC_SITE_*` 값은 화면과 metadata에 표시될 도메인/브랜드를 제어합니다.
+
+### 99i.kr로 동일 서비스 하나 더 만들기
+
+같은 코드베이스를 그대로 배포하고, 환경 변수와 데이터베이스만 분리하면 됩니다.
+
+```env
+TURSO_DATABASE_URL=libsql://your-99i-db.turso.io
+TURSO_AUTH_TOKEN=your-99i-token
+BASE_URL=https://99i.kr
+NEXT_PUBLIC_SITE_DOMAIN=99i.kr
+NEXT_PUBLIC_SITE_NAME=99i.kr
+NEXT_PUBLIC_SITE_TITLE=99i.kr - URL 단축 서비스
+NEXT_PUBLIC_SITE_DESCRIPTION=긴 URL을 짧게 줄이고 클릭 통계를 확인하세요
+NEXT_PUBLIC_SITE_TAGLINE=URL을 짧게 줄이세요
+```
+
+권장 운영 방식:
+
+- `qqwe.kr`와 `99i.kr`는 Turso DB를 분리
+- Railway 서비스 또는 프로젝트도 분리
+- Cloudflare custom domain도 각 서비스에 별도로 연결
 
 ### 2. 의존성 설치
 

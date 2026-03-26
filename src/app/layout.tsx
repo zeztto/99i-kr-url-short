@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { getRequestSiteConfig } from "@/lib/site-config";
 
-export const metadata: Metadata = {
-  title: "qqwe.kr - URL 단축 서비스",
-  description: "긴 URL을 짧게 줄이고 클릭 통계를 확인하세요",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const siteConfig = await getRequestSiteConfig();
+
+  return {
+    metadataBase: new URL(siteConfig.baseUrl),
+    title: siteConfig.title,
+    description: siteConfig.description,
+  };
+}
 
 export default function RootLayout({
   children,

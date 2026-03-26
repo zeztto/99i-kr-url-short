@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ClicksChart, PieChartCard } from "./charts";
 import { getLinkStats } from "@/lib/stats";
+import { getRequestSiteConfig } from "@/lib/site-config";
 
 export default async function StatsPage({
   params,
@@ -13,6 +14,7 @@ export default async function StatsPage({
   const { slug } = await params;
   const { period = "7d" } = await searchParams;
   const stats = await getLinkStats(slug, period);
+  const siteConfig = await getRequestSiteConfig();
 
   if (!stats) notFound();
 
@@ -25,11 +27,13 @@ export default async function StatsPage({
     <main className="max-w-4xl mx-auto px-4 py-8">
       <div className="mb-6">
         <Link href="/" className="text-sm text-gray-400 hover:text-gray-200">
-          ← qqwe.kr
+          ← {siteConfig.name}
         </Link>
       </div>
 
-      <h1 className="text-2xl font-bold mb-1 text-white">qqwe.kr/{slug}</h1>
+      <h1 className="text-2xl font-bold mb-1 text-white">
+        {siteConfig.domain}/{slug}
+      </h1>
       <p className="text-gray-400 text-sm mb-6 truncate">{stats.url}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
