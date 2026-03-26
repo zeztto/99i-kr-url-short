@@ -160,9 +160,11 @@ NEXT_PUBLIC_SITE_NAME=99i.kr
 NEXT_PUBLIC_SITE_TITLE=99i.kr - URL 단축 서비스
 NEXT_PUBLIC_SITE_DESCRIPTION=긴 URL을 짧게 줄이고 클릭 통계를 확인하세요
 NEXT_PUBLIC_SITE_TAGLINE=URL을 짧게 줄이세요
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=your-site-key
+TURNSTILE_SECRET_KEY=your-secret-key
 ```
 
-`BASE_URL`은 단축 URL 응답 본문에 들어갈 서비스 기준 주소입니다. `NEXT_PUBLIC_SITE_*` 값은 화면과 metadata에 표시될 도메인/브랜드를 제어합니다.
+`BASE_URL`은 단축 URL 응답 본문에 들어갈 서비스 기준 주소입니다. `NEXT_PUBLIC_SITE_*` 값은 화면과 metadata에 표시될 도메인/브랜드를 제어합니다. `NEXT_PUBLIC_TURNSTILE_SITE_KEY`는 클라이언트 위젯 렌더링용 공개 키이고, `TURNSTILE_SECRET_KEY`는 `/api/shorten`에서 Cloudflare Siteverify 검증에 사용하는 서버 전용 비밀 키입니다.
 
 ### 2. 의존성 설치
 

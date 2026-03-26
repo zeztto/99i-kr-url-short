@@ -1,10 +1,39 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import Script from "next/script";
+import { useEffect, useRef, useState } from "react";
 import type { SiteConfig } from "@/lib/site-config";
 
-export function HomeClient({ siteConfig }: { siteConfig: SiteConfig }) {
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        container: HTMLElement,
+        options: {
+          sitekey: string;
+          theme?: "light" | "dark" | "auto";
+          size?: "normal" | "compact" | "flexible";
+          callback?: (token: string) => void;
+          "error-callback"?: () => void;
+          "expired-callback"?: () => void;
+        }
+      ) => string;
+      reset: (widgetId: string) => void;
+      remove: (widgetId: string) => void;
+    };
+  }
+}
+
+interface HomeClientProps {
+  siteConfig: SiteConfig;
+  turnstileSiteKey?: string | null;
+}
+
+export function HomeClient({
+  siteConfig,
+  turnstileSiteKey,
+}: HomeClientProps) {
   const [url, setUrl] = useState("");
   const [result, setResult] = useState<{
     shortUrl: string;
@@ -13,30 +42,106 @@ export function HomeClient({ siteConfig }: { siteConfig: SiteConfig }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReady, setTurnstileReady] = useState(false);
+  const turnstileContainerRef = useRef<HTMLDivElement | null>(null);
+  const turnstileWidgetIdRef = useRef<string | null>(null);
+  const turnstileEnabled = Boolean(turnstileSiteKey);
+
+  useEffect(() => {
+    if (!turnstileEnabled || typeof window === "undefined") return;
+    if (window.turnstile) {
+      setTurnstileReady(true);
+    }
+  }, [turnstileEnabled]);
+
+  useEffect(() => {
+    if (
+      !turnstileEnabled ||
+      !turnstileReady ||
+      !turnstileSiteKey ||
+      !turnstileContainerRef.current ||
+      turnstileWidgetIdRef.current ||
+      !window.turnstile
+    ) {
+      return;
+    }
+
+    turnstileWidgetIdRef.current = window.turnstile.render(
+      turnstileContainerRef.current,
+      {
+        sitekey: turnstileSiteKey,
+        theme: "dark",
+        size: "flexible",
+        callback: (token: string) => {
+          setTurnstileToken(token);
+          setError("");
+        },
+        "error-callback": () => {
+          setTurnstileToken("");
+          setError("보안 확인을 불러오지 못했습니다. 잠시 후 다시 시도해주세요");
+        },
+        "expired-callback": () => {
+          setTurnstileToken("");
+          setError("보안 확인이 만료되었습니다. 다시 확인해주세요");
+        },
+      }
+    );
+
+    return () => {
+      if (turnstileWidgetIdRef.current && window.turnstile) {
+        window.turnstile.remove(turnstileWidgetIdRef.current);
+        turnstileWidgetIdRef.current = null;
+      }
+    };
+  }, [turnstileEnabled, turnstileReady, turnstileSiteKey]);
+
+  function resetTurnstile() {
+    setTurnstileToken("");
+
+    if (turnstileWidgetIdRef.current && window.turnstile) {
+      window.turnstile.reset(turnstileWidgetIdRef.current);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setResult(null);
+
+    if (turnstileEnabled && !turnstileToken) {
+      setError("보안 확인을 완료해주세요");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const res = await fetch("/api/shorten", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, turnstileToken }),
       });
       const data = await res.json();
 
       if (!res.ok) {
         setError(data.error || "오류가 발생했습니다");
+        if (turnstileEnabled) {
+          resetTurnstile();
+        }
         return;
       }
 
       setResult(data);
       setUrl("");
+      if (turnstileEnabled) {
+        resetTurnstile();
+      }
     } catch {
       setError("서버에 연결할 수 없습니다");
+      if (turnstileEnabled) {
+        resetTurnstile();
+      }
     } finally {
       setLoading(false);
     }
@@ -51,6 +156,18 @@ export function HomeClient({ siteConfig }: { siteConfig: SiteConfig }) {
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen px-4">
+      {turnstileEnabled && (
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          strategy="afterInteractive"
+          onReady={() => setTurnstileReady(true)}
+          onError={() => {
+            setTurnstileReady(false);
+            setError("보안 확인 스크립트를 불러오지 못했습니다");
+          }}
+        />
+      )}
+
       <div className="w-full max-w-xl">
         <h1 className="text-4xl font-bold text-center mb-2">
           {siteConfig.name}
@@ -67,12 +184,21 @@ export function HomeClient({ siteConfig }: { siteConfig: SiteConfig }) {
           />
           <button
             type="submit"
-            disabled={loading || !url}
+            disabled={loading || !url || (turnstileEnabled && !turnstileToken)}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
           >
             {loading ? "..." : "단축하기"}
           </button>
         </form>
+
+        {turnstileEnabled && (
+          <div className="mt-4 rounded-lg border border-gray-800 bg-gray-900/80 p-3">
+            <div ref={turnstileContainerRef} className="min-h-16" />
+            <p className="mt-3 text-xs text-gray-500">
+              자동화된 생성 요청을 막기 위해 보안 확인을 완료해야 링크를 만들 수 있습니다.
+            </p>
+          </div>
+        )}
 
         {error && <p className="mt-4 text-red-500 text-center">{error}</p>}
 

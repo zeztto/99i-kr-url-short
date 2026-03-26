@@ -5,6 +5,10 @@ import { generateSlug, isReservedPath } from "@/lib/slug";
 import { validateUrl } from "@/lib/url";
 import { rateLimiter } from "@/lib/rate-limit";
 import { resolvePublicBaseUrl } from "@/lib/public-url";
+import {
+  isTurnstileEnabled,
+  verifyTurnstileToken,
+} from "@/lib/turnstile";
 
 export async function POST(request: NextRequest) {
   const ip =
@@ -23,6 +27,22 @@ export async function POST(request: NextRequest) {
       { error: "올바른 URL을 입력해주세요" },
       { status: 400 }
     );
+  }
+
+  if (isTurnstileEnabled()) {
+    const verification = await verifyTurnstileToken({
+      token: body.turnstileToken,
+      remoteIp: ip,
+      expectedHostname:
+        request.headers.get("x-forwarded-host") || request.headers.get("host"),
+    });
+
+    if (!verification.success) {
+      return NextResponse.json(
+        { error: "보안 확인에 실패했습니다. 다시 시도해주세요" },
+        { status: 403 }
+      );
+    }
   }
 
   const maxRetries = 3;
