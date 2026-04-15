@@ -27,6 +27,10 @@ describe("isReservedPath", () => {
     expect(isReservedPath("_next")).toBe(true);
   });
 
+  it("rejects 'admin'", () => {
+    expect(isReservedPath("admin")).toBe(true);
+  });
+
   it("rejects 'favicon.ico'", () => {
     expect(isReservedPath("favicon.ico")).toBe(true);
   });

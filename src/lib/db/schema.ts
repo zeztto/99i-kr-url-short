@@ -1,19 +1,33 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
+import {
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
-export const links = sqliteTable("links", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  slug: text("slug").unique().notNull(),
-  url: text("url").notNull(),
-  createdAt: text("created_at").default(sql`(datetime('now'))`),
-});
+export const links = pgTable(
+  "links",
+  {
+    id: serial("id").primaryKey(),
+    slug: text("slug").notNull(),
+    url: text("url").notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [uniqueIndex("links_slug_unique").on(table.slug)]
+);
 
-export const clicks = sqliteTable("clicks", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const clicks = pgTable("clicks", {
+  id: serial("id").primaryKey(),
   linkId: integer("link_id")
     .notNull()
     .references(() => links.id),
-  clickedAt: text("clicked_at").default(sql`(datetime('now'))`),
+  clickedAt: timestamp("clicked_at", { mode: "string" })
+    .defaultNow()
+    .notNull(),
   referer: text("referer"),
   country: text("country"),
   device: text("device"),

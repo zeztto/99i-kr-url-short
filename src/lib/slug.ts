@@ -7,6 +7,7 @@ const nanoid = customAlphabet(
 
 const RESERVED_PATHS = new Set([
   "api",
+  "admin",
   "_next",
   "favicon.ico",
   "robots.txt",

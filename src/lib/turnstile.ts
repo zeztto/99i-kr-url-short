@@ -13,6 +13,12 @@ interface TurnstileSiteVerifyResponse {
 export interface TurnstileVerificationResult {
   success: boolean;
   errorCodes: string[];
+  hostname?: string;
+}
+
+function isFalseLike(value?: string | null): boolean {
+  if (!value) return false;
+  return /^(0|false|off|no)$/i.test(value.trim());
 }
 
 function normalizeValue(value?: string | null): string | null {
@@ -24,11 +30,21 @@ function normalizeValue(value?: string | null): string | null {
 function normalizeHostname(value?: string | null): string | null {
   const normalized = normalizeValue(value);
   if (!normalized) return null;
-  return normalized.replace(/:\d+$/, "");
+
+  try {
+    const url = /^[a-z]+:\/\//i.test(normalized)
+      ? new URL(normalized)
+      : new URL(`https://${normalized}`);
+    return url.hostname || null;
+  } catch {
+    return normalized.replace(/:\d+$/, "");
+  }
 }
 
 export function getTurnstileSiteKey(): string | null {
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim();
+  const siteKey =
+    process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ||
+    process.env.TURNSTILE_SITE_KEY?.trim();
   return siteKey || null;
 }
 
@@ -37,7 +53,21 @@ export function getTurnstileSecretKey(): string | null {
   return secretKey || null;
 }
 
+export function getTurnstileExpectedHostname(
+  requestHostname?: string | null
+): string | null {
+  return (
+    normalizeHostname(process.env.TURNSTILE_EXPECTED_HOSTNAME) ||
+    normalizeHostname(requestHostname) ||
+    normalizeHostname(process.env.BASE_URL)
+  );
+}
+
 export function isTurnstileEnabled(): boolean {
+  if (isFalseLike(process.env.TURNSTILE_ENABLED)) {
+    return false;
+  }
+
   return Boolean(getTurnstileSiteKey() && getTurnstileSecretKey());
 }
 
@@ -101,11 +131,20 @@ export async function verifyTurnstileToken({
     normalizedReturnedHostname &&
     normalizedExpectedHostname !== normalizedReturnedHostname
   ) {
-    return { success: false, errorCodes: ["hostname-mismatch"] };
+    return {
+      success: false,
+      errorCodes: ["hostname-mismatch"],
+      ...(normalizedReturnedHostname
+        ? { hostname: normalizedReturnedHostname }
+        : {}),
+    };
   }
 
   return {
     success: result.success,
     errorCodes: result["error-codes"] || [],
+    ...(normalizedReturnedHostname
+      ? { hostname: normalizedReturnedHostname }
+      : {}),
   };
 }
