@@ -1,0 +1,74 @@
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: i99-kr-db
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: tools
+    env_file:
+      - .env.production
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-lc", "npx drizzle-kit push"]
+    profiles:
+      - migration
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: 99i-kr-url-short-app:latest
+    container_name: i99-kr-app
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      HOSTNAME: 0.0.0.0
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+    expose:
+      - "3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then((res)=>process.exit(res.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      default:
+      gateway:
+        aliases:
+          - i99-kr-app
+
+networks:
+  gateway:
+    external: true
+    name: i99-kr_default
+
+volumes:
+  postgres_data:
+    name: i99-kr_pg_data

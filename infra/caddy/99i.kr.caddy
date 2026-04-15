@@ -1,0 +1,4 @@
+99i.kr {
+  encode zstd gzip
+  reverse_proxy i99-kr-app:3000
+}
