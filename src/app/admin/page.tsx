@@ -52,7 +52,7 @@ export default async function AdminPage() {
                 {setupIssues.map((issue) => (
                   <li key={issue}>{issue}</li>
                 ))}
-                <li>ADMIN_EMAILS=zeztto@gmail.com</li>
+                <li>ADMIN_EMAILS=admin1@example.com,admin2@example.com</li>
               </ul>
             </div>
             <div className="rounded-2xl border border-gray-800 bg-gray-950/80 p-5">
@@ -70,7 +70,7 @@ export default async function AdminPage() {
 AUTH_SECRET=replace-with-a-random-secret
 AUTH_GOOGLE_ID=your-google-client-id
 AUTH_GOOGLE_SECRET=your-google-client-secret
-ADMIN_EMAILS=zeztto@gmail.com`}
+ADMIN_EMAILS=admin1@example.com,admin2@example.com`}
             </pre>
           </div>
         </div>

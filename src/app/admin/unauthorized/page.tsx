@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
-import { getAdminEmails, isAdminSession } from "@/lib/admin-auth";
+import { isAdminSession } from "@/lib/admin-auth";
 
 export default async function AdminUnauthorizedPage() {
   const session = await auth();
@@ -31,9 +31,8 @@ export default async function AdminUnauthorizedPage() {
           Admin 계정만 접근할 수 있습니다
         </h1>
         <p className="mt-3 text-sm leading-6 text-gray-400">
-          허용된 admin 이메일:
-          {" "}
-          <span className="text-gray-200">{getAdminEmails().join(", ")}</span>
+          현재 로그인한 계정에는 admin 접근 권한이 없습니다. 필요한 경우
+          서비스 관리자에게 접근 권한을 요청하세요.
         </p>
         {session?.user?.email && (
           <p className="mt-2 text-sm text-gray-500">
