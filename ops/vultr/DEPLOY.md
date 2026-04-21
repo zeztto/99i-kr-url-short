@@ -54,7 +54,7 @@ rsync -az --delete \
 - `AUTH_SECRET`
 - `AUTH_GOOGLE_ID` 또는 `GOOGLE_CLIENT_ID`
 - `AUTH_GOOGLE_SECRET` 또는 `GOOGLE_CLIENT_SECRET`
-- `ADMIN_EMAILS=zeztto@gmail.com`
+- `ADMIN_EMAILS=admin1@example.com,admin2@example.com`
 - `TURNSTILE_ENABLED`
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 - `TURNSTILE_EXPECTED_HOSTNAME=99i.kr`

@@ -32,30 +32,64 @@ function normalizeForwardedValue(value?: string | null): string | null {
   return normalized || null;
 }
 
+function isLocalHost(host: string): boolean {
+  const normalized = host.trim().toLowerCase().replace(/:\d+$/, "");
+  return (
+    normalized === "localhost" ||
+    normalized === "127.0.0.1" ||
+    normalized === "::1"
+  );
+}
+
+function isTrustedRequestHost(
+  requestHost: string | null,
+  configuredHost: string | null
+): boolean {
+  if (!requestHost) return false;
+  if (!configuredHost) return true;
+
+  return (
+    isLocalHost(requestHost) ||
+    requestHost.trim().toLowerCase() === configuredHost.trim().toLowerCase()
+  );
+}
+
 export function resolveSiteConfig(
   options: ResolveSiteConfigOptions = {}
 ): SiteConfig {
   const requestHost = normalizeForwardedValue(options.host);
   const requestProto = normalizeForwardedValue(options.proto) || "https";
   const envDomain = options.domain ?? process.env.NEXT_PUBLIC_SITE_DOMAIN ?? null;
+  const configuredBaseUrl =
+    options.baseUrl || process.env.BASE_URL
+      ? stripTrailingSlash(
+          ensureAbsoluteUrl(options.baseUrl || process.env.BASE_URL || "")
+        )
+      : null;
+  const configuredHost = envDomain || (configuredBaseUrl ? new URL(configuredBaseUrl).host : null);
+  const trustedRequestHost = isTrustedRequestHost(requestHost, configuredHost)
+    ? requestHost
+    : null;
   const fallbackBaseUrl =
-    requestHost
-      ? `${requestProto}://${requestHost}`
-      : options.baseUrl ||
-        process.env.BASE_URL ||
+    trustedRequestHost
+      ? `${requestProto}://${trustedRequestHost}`
+      : configuredBaseUrl ||
         (envDomain ? `https://${envDomain}` : "http://localhost:3000");
   const baseUrl = stripTrailingSlash(ensureAbsoluteUrl(fallbackBaseUrl));
   const resolvedBaseUrl = new URL(baseUrl);
-  const siteDomain = requestHost || envDomain || resolvedBaseUrl.host;
+  const siteDomain = trustedRequestHost || envDomain || resolvedBaseUrl.host;
   const siteName =
-    requestHost || options.name || process.env.NEXT_PUBLIC_SITE_NAME || siteDomain;
+    trustedRequestHost ||
+    options.name ||
+    process.env.NEXT_PUBLIC_SITE_NAME ||
+    siteDomain;
 
   return {
     domain: siteDomain,
     name: siteName,
     baseUrl,
     title:
-      requestHost
+      trustedRequestHost
         ? `${siteName} - URL 단축 서비스`
         : options.title ||
           process.env.NEXT_PUBLIC_SITE_TITLE ||

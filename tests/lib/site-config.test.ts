@@ -14,21 +14,36 @@ afterEach(() => {
 });
 
 describe("resolveSiteConfig", () => {
-  it("prefers the request host over env branding", () => {
+  it("uses configured branding when the request host is untrusted", () => {
     process.env.BASE_URL = "https://qqwe.kr";
     process.env.NEXT_PUBLIC_SITE_DOMAIN = "qqwe.kr";
     process.env.NEXT_PUBLIC_SITE_NAME = "qqwe.kr";
     process.env.NEXT_PUBLIC_SITE_TITLE = "qqwe.kr - URL 단축 서비스";
 
     const config = resolveSiteConfig({
-      host: "99i.kr",
+      host: "evil.example",
       proto: "https",
     });
 
-    expect(config.domain).toBe("99i.kr");
-    expect(config.name).toBe("99i.kr");
-    expect(config.baseUrl).toBe("https://99i.kr");
-    expect(config.title).toBe("99i.kr - URL 단축 서비스");
+    expect(config.domain).toBe("qqwe.kr");
+    expect(config.name).toBe("qqwe.kr");
+    expect(config.baseUrl).toBe("https://qqwe.kr");
+    expect(config.title).toBe("qqwe.kr - URL 단축 서비스");
+  });
+
+  it("allows localhost branding for local development", () => {
+    process.env.BASE_URL = "https://99i.kr";
+    process.env.NEXT_PUBLIC_SITE_DOMAIN = "99i.kr";
+    process.env.NEXT_PUBLIC_SITE_NAME = "99i.kr";
+
+    const config = resolveSiteConfig({
+      host: "localhost:3000",
+      proto: "http",
+    });
+
+    expect(config.domain).toBe("localhost:3000");
+    expect(config.name).toBe("localhost:3000");
+    expect(config.baseUrl).toBe("http://localhost:3000");
   });
 
   it("uses env branding when request host is unavailable", () => {

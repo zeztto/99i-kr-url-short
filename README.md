@@ -40,7 +40,7 @@
 ### 4. Admin Dashboard
 
 - `/admin` 진입 시 별도 로그인 버튼 없이 Google OAuth sign-in을 시작합니다.
-- 허용된 admin 이메일(`ADMIN_EMAILS`, 기본값 `zeztto@gmail.com`)만 접근할 수 있습니다.
+- `ADMIN_EMAILS`에 명시적으로 등록된 계정만 admin 접근이 가능합니다.
 - 전체 링크 목록, 총 클릭 수, 최근 7일 링크 생성 수, 최근 7일 클릭 수를 한 화면에서 확인할 수 있습니다.
 - 각 링크에서 개별 `/{slug}/stats` 상세 페이지로 바로 이동할 수 있습니다.
 
@@ -176,7 +176,7 @@ AUTH_URL=https://99i.kr
 AUTH_SECRET=replace-with-a-random-secret
 AUTH_GOOGLE_ID=your-google-client-id
 AUTH_GOOGLE_SECRET=your-google-client-secret
-ADMIN_EMAILS=zeztto@gmail.com
+ADMIN_EMAILS=admin1@example.com,admin2@example.com
 NEXT_PUBLIC_SITE_DOMAIN=99i.kr
 NEXT_PUBLIC_SITE_NAME=99i.kr
 NEXT_PUBLIC_SITE_TITLE=99i.kr - URL 단축 서비스

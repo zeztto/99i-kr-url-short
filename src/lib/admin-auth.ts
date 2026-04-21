@@ -1,7 +1,5 @@
 import type { Session } from "next-auth";
 
-const DEFAULT_ADMIN_EMAILS = ["zeztto@gmail.com"];
-
 function normalizeEmail(email?: string | null): string | null {
   if (!email) return null;
   const normalized = email.trim().toLowerCase();
@@ -15,7 +13,7 @@ export function getAdminEmails(): string[] {
     .filter((value): value is string => Boolean(value));
 
   if (!configured?.length) {
-    return DEFAULT_ADMIN_EMAILS;
+    return [];
   }
 
   return Array.from(new Set(configured));
@@ -59,7 +57,8 @@ export function getAdminAuthSetupIssues(): string[] {
   if (!getGoogleClientSecret()) {
     issues.push("AUTH_GOOGLE_SECRET or GOOGLE_CLIENT_SECRET");
   }
-  if (!getAuthSecret()) issues.push("AUTH_SECRET");
+  if (!getAuthSecret()) issues.push("AUTH_SECRET or NEXTAUTH_SECRET");
+  if (getAdminEmails().length === 0) issues.push("ADMIN_EMAILS");
 
   return issues;
 }

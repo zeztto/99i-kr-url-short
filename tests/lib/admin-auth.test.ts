@@ -27,18 +27,18 @@ afterEach(() => {
 });
 
 describe("getAdminEmails", () => {
-  it("uses the default admin email when env is empty", () => {
+  it("returns an empty list when env is empty", () => {
     delete process.env.ADMIN_EMAILS;
 
-    expect(getAdminEmails()).toEqual(["zeztto@gmail.com"]);
+    expect(getAdminEmails()).toEqual([]);
   });
 
   it("normalizes and deduplicates configured admin emails", () => {
     process.env.ADMIN_EMAILS =
-      " ZEZTTO@gmail.com,admin@example.com,zeztto@gmail.com ";
+      " OWNER@example.com,admin@example.com,owner@example.com ";
 
     expect(getAdminEmails()).toEqual([
-      "zeztto@gmail.com",
+      "owner@example.com",
       "admin@example.com",
     ]);
   });
@@ -46,9 +46,9 @@ describe("getAdminEmails", () => {
 
 describe("isAdminEmail", () => {
   it("matches emails case-insensitively", () => {
-    process.env.ADMIN_EMAILS = "zeztto@gmail.com";
+    process.env.ADMIN_EMAILS = "owner@example.com";
 
-    expect(isAdminEmail("Zeztto@gmail.com")).toBe(true);
+    expect(isAdminEmail("Owner@example.com")).toBe(true);
     expect(isAdminEmail("other@example.com")).toBe(false);
   });
 });
@@ -61,11 +61,13 @@ describe("getAdminAuthSetupIssues", () => {
     delete process.env.GOOGLE_CLIENT_SECRET;
     delete process.env.AUTH_SECRET;
     delete process.env.NEXTAUTH_SECRET;
+    delete process.env.ADMIN_EMAILS;
 
     expect(getAdminAuthSetupIssues()).toEqual([
       "AUTH_GOOGLE_ID or GOOGLE_CLIENT_ID",
       "AUTH_GOOGLE_SECRET or GOOGLE_CLIENT_SECRET",
-      "AUTH_SECRET",
+      "AUTH_SECRET or NEXTAUTH_SECRET",
+      "ADMIN_EMAILS",
     ]);
   });
 
@@ -73,6 +75,7 @@ describe("getAdminAuthSetupIssues", () => {
     process.env.AUTH_GOOGLE_ID = "google-id";
     process.env.AUTH_GOOGLE_SECRET = "google-secret";
     process.env.AUTH_SECRET = "secret";
+    process.env.ADMIN_EMAILS = "admin@example.com";
 
     expect(getAdminAuthSetupIssues()).toEqual([]);
   });
