@@ -1,6 +1,6 @@
 # Vultr Deploy
 
-이 문서는 `99i.kr` 운영 서버(`p1zza-1st`)에 현재 프로젝트를 수동 배포할 때의 기준 절차입니다.
+이 문서는 `99i.kr` 운영 서버(`p1zza-2nd`)에 현재 프로젝트를 수동 배포할 때의 기준 절차입니다.
 
 ## 전제
 
@@ -21,9 +21,9 @@
 ## 배포 전 점검
 
 ```bash
-ssh p1zza-1st 'docker compose --env-file /opt/99i-kr-url-short/.env.production -f /opt/99i-kr-url-short/compose.yml ps'
-ssh p1zza-1st 'docker ps --format "table {{.Names}}\t{{.Status}}" | grep i99-kr'
-ssh p1zza-1st 'sed -n "1,120p" /opt/caddy/sites-enabled/99i.kr.caddy'
+ssh p1zza-2nd 'docker compose --env-file /opt/99i-kr-url-short/.env.production -f /opt/99i-kr-url-short/compose.yml ps'
+ssh p1zza-2nd 'docker ps --format "table {{.Names}}\t{{.Status}}" | grep i99-kr'
+ssh p1zza-2nd 'sed -n "1,120p" /opt/caddy/sites-enabled/99i.kr.caddy'
 ```
 
 ## 코드 업로드
@@ -38,7 +38,7 @@ rsync -az --delete \
   --exclude '.env' \
   --exclude '.env.local' \
   --exclude '.env.production' \
-  ./ p1zza-1st:/opt/99i-kr-url-short/
+  ./ p1zza-2nd:/opt/99i-kr-url-short/
 ```
 
 ## 운영 env 반영
@@ -65,33 +65,33 @@ rsync -az --delete \
 DB schema 반영:
 
 ```bash
-ssh p1zza-1st 'cd /opt/99i-kr-url-short && docker compose --env-file .env.production -f compose.yml --profile migration run --rm migrator'
+ssh p1zza-2nd 'cd /opt/99i-kr-url-short && docker compose --env-file .env.production -f compose.yml --profile migration run --rm migrator'
 ```
 
 앱 재빌드/재기동:
 
 ```bash
-ssh p1zza-1st 'cd /opt/99i-kr-url-short && docker compose --env-file .env.production -f compose.yml up -d --build app'
+ssh p1zza-2nd 'cd /opt/99i-kr-url-short && docker compose --env-file .env.production -f compose.yml up -d --build app'
 ```
 
 필요 시 DB까지 포함한 상태 확인:
 
 ```bash
-ssh p1zza-1st 'cd /opt/99i-kr-url-short && docker compose --env-file .env.production -f compose.yml ps'
+ssh p1zza-2nd 'cd /opt/99i-kr-url-short && docker compose --env-file .env.production -f compose.yml ps'
 ```
 
 반복 배포용 스크립트:
 
 ```bash
-ssh p1zza-1st 'bash /opt/99i-kr-url-short/ops/vultr/deploy.sh'
+ssh p1zza-2nd 'bash /opt/99i-kr-url-short/ops/vultr/deploy.sh'
 ```
 
 ## 배포 후 검증
 
 ```bash
-ssh p1zza-1st 'curl -I -s https://99i.kr'
-ssh p1zza-1st 'curl -I -s https://99i.kr/admin'
-ssh p1zza-1st 'docker logs --tail 100 i99-kr-app'
+ssh p1zza-2nd 'curl -I -s https://99i.kr'
+ssh p1zza-2nd 'curl -I -s https://99i.kr/admin'
+ssh p1zza-2nd 'docker logs --tail 100 i99-kr-app'
 ```
 
 확인 포인트:
