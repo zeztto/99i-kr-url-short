@@ -4,9 +4,9 @@
 
 **Goal:** Build a working URL shortener at qqwe.kr with redirect, analytics, and a stats page.
 
-**Architecture:** Next.js 15 App Router monolith on Railway. Redirects are handled by a catch-all route handler (`src/app/[slug]/route.ts`) instead of middleware, because `@libsql/client` requires the Node.js runtime (not Edge). Analytics are recorded asynchronously via Next.js 15 `after()`. Turso (libSQL) for persistence via Drizzle ORM.
+**Architecture:** Next.js 16 App Router monolith on Vultr Docker Compose. Redirects are handled by a catch-all route handler (`src/app/[slug]/route.ts`) so analytics can be recorded asynchronously via Next.js 16 `after()`. PostgreSQL is used for persistence via Drizzle ORM.
 
-**Tech Stack:** Next.js 15, Drizzle ORM, Turso, Tailwind CSS, Recharts, nanoid, ua-parser-js, Vitest
+**Tech Stack:** Next.js 16, Drizzle ORM, PostgreSQL, Tailwind CSS, Recharts, nanoid, ua-parser-js, Vitest
 
 **Spec:** `docs/superpowers/specs/2026-03-25-url-shortener-design.md`
 
@@ -33,7 +33,7 @@ src/
 │               └── route.ts         # GET /api/stats/[slug]
 ├── lib/
 │   ├── db/
-│   │   ├── index.ts                 # Drizzle client + Turso connection
+│   │   ├── index.ts                 # Drizzle client + PostgreSQL connection
 │   │   └── schema.ts                # Drizzle schema (links, clicks)
 │   ├── slug.ts                      # Slug generation + reserved path check
 │   ├── url.ts                       # URL validation
@@ -49,7 +49,7 @@ tests/
 │   └── rate-limit.test.ts
 ```
 
-**Key architecture decision:** Middleware runs in Edge Runtime, which cannot use `@libsql/client` (Node.js APIs). Instead, `src/app/[slug]/route.ts` handles redirects as a route handler with `export const runtime = "nodejs"`. The `after()` API records analytics after the redirect response is sent.
+**Key architecture decision:** `src/app/[slug]/route.ts` handles redirects as a route handler with `export const runtime = "nodejs"`. The `after()` API records analytics after the redirect response is sent.
 
 ---
 
@@ -67,15 +67,14 @@ npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --
 - [ ] **Step 2: Install dependencies**
 
 ```bash
-npm install @libsql/client drizzle-orm nanoid ua-parser-js recharts
+npm install postgres drizzle-orm nanoid ua-parser-js recharts
 npm install -D drizzle-kit vitest @types/ua-parser-js
 ```
 
 - [ ] **Step 3: Create `.env.local`**
 
 ```env
-TURSO_DATABASE_URL=libsql://your-db.turso.io
-TURSO_AUTH_TOKEN=your-token
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/99i_kr
 BASE_URL=http://localhost:3000
 ```
 
@@ -87,10 +86,9 @@ import { defineConfig } from "drizzle-kit";
 export default defineConfig({
   schema: "./src/lib/db/schema.ts",
   out: "./drizzle",
-  dialect: "turso",
+  dialect: "postgresql",
   dbCredentials: {
-    url: process.env.TURSO_DATABASE_URL!,
-    authToken: process.env.TURSO_AUTH_TOKEN,
+    url: process.env.DATABASE_URL!,
   },
 });
 ```
@@ -143,22 +141,36 @@ git commit -m "Initialize Next.js project with dependencies"
 
 ```ts
 // src/lib/db/schema.ts
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
+import {
+  integer,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
-export const links = sqliteTable("links", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  slug: text("slug").unique().notNull(),
-  url: text("url").notNull(),
-  createdAt: text("created_at").default(sql`(datetime('now'))`),
-});
+export const links = pgTable(
+  "links",
+  {
+    id: serial("id").primaryKey(),
+    slug: text("slug").notNull(),
+    url: text("url").notNull(),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [uniqueIndex("links_slug_unique").on(table.slug)]
+);
 
-export const clicks = sqliteTable("clicks", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const clicks = pgTable("clicks", {
+  id: serial("id").primaryKey(),
   linkId: integer("link_id")
     .notNull()
     .references(() => links.id),
-  clickedAt: text("clicked_at").default(sql`(datetime('now'))`),
+  clickedAt: timestamp("clicked_at", { mode: "string" })
+    .defaultNow()
+    .notNull(),
   referer: text("referer"),
   country: text("country"),
   device: text("device"),
@@ -171,13 +183,16 @@ export const clicks = sqliteTable("clicks", {
 
 ```ts
 // src/lib/db/index.ts
-import { drizzle } from "drizzle-orm/libsql";
-import { createClient } from "@libsql/client";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "./schema";
 
-const client = createClient({
-  url: process.env.TURSO_DATABASE_URL!,
-  authToken: process.env.TURSO_AUTH_TOKEN,
+const connectionString =
+  process.env.DATABASE_URL ||
+  "postgresql://postgres:postgres@127.0.0.1:5432/99i_kr";
+
+const client = postgres(connectionString, {
+  prepare: false,
 });
 
 export const db = drizzle(client, { schema });
@@ -190,7 +205,7 @@ npx drizzle-kit generate
 npx drizzle-kit push
 ```
 
-Expected: Tables `links` and `clicks` created in Turso.
+Expected: Tables `links` and `clicks` created in PostgreSQL.
 
 - [ ] **Step 4: Commit**
 
@@ -676,7 +691,7 @@ git commit -m "Add POST /api/shorten endpoint"
 **Files:**
 - Create: `src/app/[slug]/route.ts`
 
-This is a route handler (not middleware) because `@libsql/client` requires Node.js runtime.
+This is a route handler so analytics can be recorded after the redirect response.
 
 - [ ] **Step 1: Implement**
 
@@ -735,7 +750,7 @@ export async function GET(
 1. Create a short URL via `/api/shorten`
 2. Visit `http://localhost:3000/<slug>` in browser
 3. Confirm redirect to original URL
-4. Check Turso `clicks` table for new row
+4. Check PostgreSQL `clicks` table for new row
 
 - [ ] **Step 3: Commit**
 
@@ -1352,17 +1367,16 @@ Ensure `"build": "next build"` and `"start": "next start"` exist.
 - [ ] **Step 2: Create GitHub repo and push**
 
 ```bash
-gh repo create qqwe.kr-url-short --private --source=. --push
+gh repo create 99i-kr-url-short --private --source=. --push
 ```
 
-- [ ] **Step 3: Deploy on Railway**
+- [ ] **Step 3: Deploy on Vultr Docker Compose**
 
-Set environment variables in Railway dashboard:
-- `TURSO_DATABASE_URL`
-- `TURSO_AUTH_TOKEN`
+Set environment variables in Vultr Docker Compose dashboard:
+- `DATABASE_URL`
 - `BASE_URL=https://qqwe.kr`
 
-Connect GitHub repo. Railway auto-builds and deploys.
+Connect GitHub repo. Vultr Docker Compose auto-builds and deploys.
 
 - [ ] **Step 4: Verify production**
 

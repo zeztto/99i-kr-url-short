@@ -15,7 +15,7 @@ declare global {
           theme?: "light" | "dark" | "auto";
           size?: "normal" | "compact" | "flexible";
           callback?: (token: string) => void;
-          "error-callback"?: () => void;
+          "error-callback"?: (errorCode?: string | number) => boolean | void;
           "expired-callback"?: () => void;
         }
       ) => string;
@@ -72,14 +72,16 @@ export function HomeClient({
       {
         sitekey: turnstileSiteKey,
         theme: "dark",
-        size: "flexible",
+        size: "normal",
         callback: (token: string) => {
           setTurnstileToken(token);
           setError("");
         },
-        "error-callback": () => {
+        "error-callback": (errorCode?: string | number) => {
+          console.warn("Turnstile widget error", { errorCode });
           setTurnstileToken("");
           setError("보안 확인을 불러오지 못했습니다. 잠시 후 다시 시도해주세요");
+          return true;
         },
         "expired-callback": () => {
           setTurnstileToken("");

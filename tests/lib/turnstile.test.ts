@@ -66,6 +66,15 @@ describe("turnstile env helpers", () => {
     expect(getTurnstileExpectedHostname("proxy.internal:3000")).toBe("99i.kr");
   });
 
+  it("normalizes forwarded request hosts with ports and comma-separated values", () => {
+    delete process.env.TURNSTILE_EXPECTED_HOSTNAME;
+
+    expect(getTurnstileExpectedHostname("https://99i.kr, proxy.internal")).toBe(
+      "99i.kr"
+    );
+    expect(getTurnstileExpectedHostname("99i.kr:443")).toBe("99i.kr");
+  });
+
   it("falls back to BASE_URL hostname when request host is unavailable", () => {
     delete process.env.TURNSTILE_EXPECTED_HOSTNAME;
     process.env.BASE_URL = "https://99i.kr/path";
@@ -138,6 +147,35 @@ describe("verifyTurnstileToken", () => {
     });
   });
 
+  it("allows hostname differences for Cloudflare test secret keys", async () => {
+    process.env.TURNSTILE_SECRET_KEY =
+      "1x0000000000000000000000000000000AA";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            success: true,
+            hostname: "example.com",
+          }),
+          { status: 200 }
+        )
+      )
+    );
+
+    await expect(
+      verifyTurnstileToken({
+        token: "test-token",
+        expectedHostname: "localhost",
+      })
+    ).resolves.toEqual({
+      success: true,
+      errorCodes: [],
+      hostname: "example.com",
+    });
+  });
+
+
   it("returns Cloudflare validation errors", async () => {
     process.env.TURNSTILE_SECRET_KEY = "secret-key";
     vi.stubGlobal(
@@ -159,5 +197,31 @@ describe("verifyTurnstileToken", () => {
       success: false,
       errorCodes: ["timeout-or-duplicate"],
     });
+  });
+
+  it("sends remoteip only when it is a valid IP address", async () => {
+    process.env.TURNSTILE_SECRET_KEY = "secret-key";
+    const fetchMock = vi.fn().mockImplementation(() =>
+      Promise.resolve(
+        new Response(JSON.stringify({ success: true }), { status: 200 })
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await verifyTurnstileToken({
+      token: "valid-token",
+      remoteIp: "203.0.113.10, 198.51.100.10",
+    });
+
+    const firstBody = fetchMock.mock.calls[0]?.[1]?.body as URLSearchParams;
+    expect(firstBody.get("remoteip")).toBe("203.0.113.10");
+
+    await verifyTurnstileToken({
+      token: "valid-token",
+      remoteIp: "unknown",
+    });
+
+    const secondBody = fetchMock.mock.calls[1]?.[1]?.body as URLSearchParams;
+    expect(secondBody.has("remoteip")).toBe(false);
   });
 });
