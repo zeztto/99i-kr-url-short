@@ -25,7 +25,7 @@ export default async function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
+    <main className="flex min-h-screen items-center justify-center px-4 text-[var(--text-primary)]">
       <AutoSubmitForm action={signInWithGoogle} />
     </main>
   );

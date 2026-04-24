@@ -13,6 +13,12 @@
 - admin은 잘못 생성된 링크와 해당 클릭 기록을 삭제할 수 있습니다.
 - 인증 없이 누구나 사용할 수 있는 MVP 구조를 유지하면서도, 기본적인 rate limit과 예약 경로 보호, 선택적 Cloudflare Turnstile 검증을 적용했습니다.
 - 홈페이지에는 `robots.txt`, `sitemap.xml`, Open Graph metadata와 공유 이미지를 제공해 검색엔진 노출과 링크 미리보기를 보강했습니다.
+- 홈페이지는 light-first 디자인 시스템을 기반으로 한 마케팅 landing page와 즉시 URL 단축 도구를 함께 제공합니다.
+- 공개 landing page는 Basic, Pro, Max, Enterprise 플랜과 가입자 통계 정책을 설명하고, Admin 백오피스 링크는 공개 네비게이션에서 노출하지 않습니다.
+- FEATURES 섹션은 플랜명이 아니라 URL 생성, 통계, 캠페인 비교, 고유주소, 목적지 수정, QR 코드, 보고서, 전용 운영 같은 고객 사용 기능을 쉬운 표현의 3행 motion card로 설명하고, 카드 배경 그라데이션은 사용하지 않습니다.
+- USE CASES 섹션은 추천인, 광고 소재, 채널 분리, QR 캠페인에서 FEATURES 기능이 실제로 연결되는 흐름을 playbook 레이아웃으로 설명합니다.
+- 랜딩 페이지는 추천사와 사용 기업 유형을 통해 단축 링크의 실제 마케팅 운영 맥락을 보여줍니다.
+- 랜딩 페이지 하단에는 공개 탐색과 플랜 정보를 다시 정리하는 footer를 제공합니다.
 
 ## 주요 기능
 
@@ -52,6 +58,17 @@
 - Turnstile 환경 변수가 설정되면 `/api/shorten`에서 Cloudflare Siteverify를 호출해 verification을 강제합니다.
 - Drizzle ORM을 통해 쿼리를 구성해 SQL injection 위험을 줄입니다.
 - 보안 헤더(HSTS, X-Frame-Options, COOP, Referrer-Policy 등)를 기본 적용합니다.
+
+### 6. Landing / SEO
+
+- Basic 플랜은 무료, 비상업적 용도와 개인적인 공유 목적, 무작위 단축 주소, 최대 10개 주소 관리, 주소당 10,000회 접속, 총 클릭 수와 접속 국가 정보를 안내합니다.
+- Pro 플랜은 연 구독 4,500원/월 또는 월 구독 5,500원/월, 프리랜서 마케터용, 최대 30개 주소 관리, 추천인/채널 링크 구분, 캠페인별 주소 묶음, 캠페인당 100,000회 접속, 기본 통계와 기간 데이터, 캠페인 QR 코드 생성/관리를 안내합니다.
+- Max 플랜은 연 구독 13,200원/월 또는 월 구독 16,500원/월, 성장하는 팀용, 최대 100개 주소 관리, 고유주소, 목적지 수정, 주소당 1,000,000회 접속, 상세 통계, 보고서 다운로드, QR 코드 목적지 수정/관리를 안내합니다.
+- Max 플랜에는 통계 보고서 다운로드 기능을 포함합니다.
+- Enterprise 플랜은 맞춤 단축 주소 수와 접속 한도, 전용 도메인, SSO/SAML 로그인, SCIM 사용자 프로비저닝, 팀 권한과 승인 워크플로, 감사 로그, 대량 QR 캠페인, 맞춤 통계 리포트와 SLA를 문의 기반으로 안내합니다.
+- social proof 섹션은 실제 고객명이 확인되지 않은 브랜드명을 만들지 않고 역할 기반 추천사와 사용 기업 유형을 안내합니다.
+- 공개 footer는 서비스, 플랜, 마케팅 활용 링크를 제공하되 Admin 백오피스 링크는 노출하지 않습니다.
+- 홈페이지에는 favicon, Open Graph image, keywords, robots metadata, JSON-LD Organization/WebSite/SoftwareApplication/FAQPage structured data를 제공합니다.
 
 ## 기술 스택
 
