@@ -24,17 +24,17 @@ export default async function StatsPage({
   ) => items.map((item) => ({ name: item[key], value: item.clicks }));
 
   return (
-    <main className="max-w-4xl mx-auto px-4 py-8">
+    <main className="mx-auto min-h-screen max-w-4xl px-4 py-8 text-[var(--text-primary)]">
       <div className="mb-6">
-        <Link href="/" className="text-sm text-gray-400 hover:text-gray-200">
+        <Link href="/" className="text-sm font-medium text-[var(--accent-green)] hover:text-[var(--accent-green-strong)]">
           ← {siteConfig.name}
         </Link>
       </div>
 
-      <h1 className="text-2xl font-bold mb-1 text-white">
+      <h1 className="mb-1 text-2xl font-bold text-[var(--text-primary)]">
         {siteConfig.domain}/{slug}
       </h1>
-      <p className="text-gray-400 text-sm mb-6 truncate">{stats.url}</p>
+      <p className="mb-6 truncate text-sm text-[var(--text-secondary)]">{stats.url}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <StatCard label="총 클릭수" value={stats.totalClicks} />
@@ -43,13 +43,13 @@ export default async function StatsPage({
       </div>
 
       {stats.totalClicks === 0 && (
-        <div className="mb-8 rounded-lg border border-blue-800 bg-blue-950 p-4 text-sm text-blue-200">
+        <div className="mb-8 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-secondary)]">
           아직 클릭이 없습니다. 단축 링크가 실제로 열려야 통계가 기록됩니다.
           <a
             href={`/${slug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-2 font-medium text-blue-400 underline underline-offset-4"
+            className="ml-2 font-medium text-[var(--accent-green)] underline underline-offset-4"
           >
             단축 링크 열기
           </a>
@@ -90,9 +90,9 @@ export default async function StatsPage({
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
-      <p className="text-3xl font-bold text-white">{value}</p>
-      <p className="text-gray-400 text-sm">{label}</p>
+    <div className="rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 shadow-[var(--shadow-small)]">
+      <p className="text-3xl font-bold text-[var(--text-primary)]">{value}</p>
+      <p className="text-sm text-[var(--text-secondary)]">{label}</p>
     </div>
   );
 }
@@ -111,8 +111,8 @@ function PeriodLink({
       href={`/${slug}/stats?period=${period}`}
       className={`px-3 py-1 rounded text-sm ${
         active
-          ? "bg-blue-600 text-white"
-          : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+          ? "bg-[var(--accent-green)] text-[var(--text-inverse)]"
+          : "bg-[var(--surface-muted)] text-[var(--text-secondary)] hover:bg-[var(--surface-sage)]"
       }`}
     >
       {period === "7d" ? "7일" : "30일"}
@@ -128,8 +128,8 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-gray-800 p-4 rounded-lg border border-gray-700 mb-4">
-      <h2 className="font-semibold mb-3 text-gray-200">{title}</h2>
+    <div className="mb-4 rounded-lg border border-[var(--border-soft)] bg-[var(--surface-primary)] p-4 shadow-[var(--shadow-small)]">
+      <h2 className="mb-3 font-semibold text-[var(--text-primary)]">{title}</h2>
       {children}
     </div>
   );
@@ -142,8 +142,8 @@ function StatsList({ items }: { items: { name: string; value: number }[] }) {
     <div className="space-y-2">
       {items.map((item) => (
         <div key={item.name} className="flex justify-between text-sm">
-          <span className="truncate mr-4 text-gray-300">{item.name}</span>
-          <span className="font-medium text-white">{item.value}</span>
+          <span className="mr-4 truncate text-[var(--text-secondary)]">{item.name}</span>
+          <span className="font-medium text-[var(--text-primary)]">{item.value}</span>
         </div>
       ))}
     </div>

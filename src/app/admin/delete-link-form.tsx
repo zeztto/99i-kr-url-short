@@ -10,7 +10,7 @@ function DeleteButton() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-lg border border-red-900/70 px-3 py-1.5 text-sm font-medium text-red-300 hover:border-red-700 hover:bg-red-950/40 hover:text-red-200 disabled:cursor-not-allowed disabled:opacity-60"
+      className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-[var(--accent-red)] hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? "삭제 중" : "삭제"}
     </button>
