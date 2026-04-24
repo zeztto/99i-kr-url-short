@@ -1,11 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
-import {
-  getAdminAuthSetupIssues,
-  getGoogleCallbackUrl,
-  isAdminSession,
-} from "@/lib/admin-auth";
+import { DeleteLinkForm } from "@/app/admin/delete-link-form";
+import { getAdminAuthSetupIssues, isAdminSession } from "@/lib/admin-auth";
 import { getAdminDashboardData } from "@/lib/admin-dashboard";
 import { getRequestSiteConfig } from "@/lib/site-config";
 
@@ -25,66 +22,13 @@ function StatCard({
 }
 
 export default async function AdminPage() {
-  const siteConfig = await getRequestSiteConfig();
-  const setupIssues = getAdminAuthSetupIssues();
-
-  if (setupIssues.length > 0) {
-    const callbackUrl = getGoogleCallbackUrl(siteConfig.baseUrl);
-
-    return (
-      <main className="mx-auto flex min-h-screen w-full max-w-4xl flex-col px-4 py-10">
-        <div className="rounded-3xl border border-amber-900/50 bg-gray-900/90 p-8 shadow-2xl shadow-black/20">
-          <p className="text-sm font-medium text-amber-400">
-            Admin auth setup required
-          </p>
-          <h1 className="mt-2 text-3xl font-semibold text-white">
-            Google OAuth 설정이 아직 비어 있습니다
-          </h1>
-          <p className="mt-4 text-sm leading-6 text-gray-400">
-            아래 값을 환경 변수에 추가한 뒤 `/admin` 으로 다시 접속하면
-            Google 인증 후 대시보드로 진입합니다.
-          </p>
-
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl border border-gray-800 bg-gray-950/80 p-5">
-              <p className="text-sm text-gray-500">필수 환경 변수</p>
-              <ul className="mt-3 space-y-2 text-sm text-gray-200">
-                {setupIssues.map((issue) => (
-                  <li key={issue}>{issue}</li>
-                ))}
-                <li>ADMIN_EMAILS=admin1@example.com,admin2@example.com</li>
-              </ul>
-            </div>
-            <div className="rounded-2xl border border-gray-800 bg-gray-950/80 p-5">
-              <p className="text-sm text-gray-500">Google OAuth Redirect URI</p>
-              <p className="mt-3 break-all text-sm text-gray-100">
-                {callbackUrl}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-8 rounded-2xl border border-gray-800 bg-gray-950/80 p-5">
-            <p className="text-sm text-gray-500">권장 env 예시</p>
-            <pre className="mt-3 overflow-x-auto text-sm text-gray-200">
-{`AUTH_URL=${siteConfig.baseUrl}
-AUTH_SECRET=replace-with-a-random-secret
-AUTH_GOOGLE_ID=your-google-client-id
-AUTH_GOOGLE_SECRET=your-google-client-secret
-ADMIN_EMAILS=admin1@example.com,admin2@example.com`}
-            </pre>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
   const session = await auth();
 
   if (!session) {
     redirect("/admin/login");
   }
 
-  if (!isAdminSession(session)) {
+  if (getAdminAuthSetupIssues().length > 0 || !isAdminSession(session)) {
     redirect("/admin/unauthorized");
   }
 
@@ -95,6 +39,7 @@ ADMIN_EMAILS=admin1@example.com,admin2@example.com`}
   }
 
   const dashboard = await getAdminDashboardData();
+  const siteConfig = await getRequestSiteConfig();
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-10">
@@ -156,13 +101,14 @@ ADMIN_EMAILS=admin1@example.com,admin2@example.com`}
                 <th className="px-3 py-3 font-medium">최근 7일</th>
                 <th className="px-3 py-3 font-medium">마지막 클릭</th>
                 <th className="px-3 py-3 font-medium">상세</th>
+                <th className="px-3 py-3 font-medium">삭제</th>
               </tr>
             </thead>
             <tbody>
               {dashboard.links.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-3 py-10 text-center text-sm text-gray-500"
                   >
                     아직 생성된 링크가 없습니다.
@@ -210,6 +156,9 @@ ADMIN_EMAILS=admin1@example.com,admin2@example.com`}
                       >
                         링크 통계
                       </Link>
+                    </td>
+                    <td className="px-3 py-4">
+                      <DeleteLinkForm linkId={link.id} slug={link.slug} />
                     </td>
                   </tr>
                 ))

@@ -6,20 +6,19 @@ qqwe.kr 도메인을 사용하는 URL 단축 서비스 MVP. 로그인 없이 누
 
 ## Architecture
 
-Next.js App Router 풀스택 모놀리스. Railway에서 단일 인스턴스로 운영한다. 리다이렉트는 middleware에서 처리하고 통계는 Next.js 15의 `after()` API로 비동기 기록한다.
+Next.js App Router 풀스택 모놀리스. Vultr Docker Compose에서 단일 인스턴스로 운영한다. 리다이렉트는 `src/app/[slug]/route.ts` route handler에서 처리하고 통계는 Next.js 16의 `after()` API로 비동기 기록한다.
 
 ### Environment Variables
 
 | Variable | Description |
 |----------|-------------|
-| `TURSO_DATABASE_URL` | Turso 데이터베이스 URL |
-| `TURSO_AUTH_TOKEN` | Turso 인증 토큰 |
+| `DATABASE_URL` | PostgreSQL 데이터베이스 URL |
 | `BASE_URL` | 서비스 기본 URL (e.g., `https://qqwe.kr`) |
 
 ```
-사용자 → qqwe.kr (Next.js on Railway)
+사용자 → qqwe.kr (Next.js on Vultr Docker Compose)
               ├── /                    홈페이지 (URL 입력 폼)
-              ├── middleware.ts         리다이렉트 + 비동기 통계 기록
+              ├── /[slug]               리다이렉트 + 비동기 통계 기록
               ├── /api/shorten         URL 단축 API
               ├── /api/stats/[slug]    통계 조회 API
               └── /[slug]/stats        통계 페이지
@@ -29,15 +28,15 @@ Next.js App Router 풀스택 모놀리스. Railway에서 단일 인스턴스로 
 
 | Role | Choice |
 |------|--------|
-| Framework | Next.js 15 (App Router) |
-| Database | Turso (libSQL) |
+| Framework | Next.js 16 (App Router) |
+| Database | PostgreSQL |
 | ORM | Drizzle ORM |
 | Styling | Tailwind CSS |
 | Charts | Recharts |
 | ID Generation | nanoid (6 chars) |
 | UA Parsing | ua-parser-js |
 | Testing | Vitest |
-| Deploy | Railway |
+| Deploy | Vultr Docker Compose |
 
 ## Data Flow
 
@@ -47,17 +46,17 @@ Next.js App Router 풀스택 모놀리스. Railway에서 단일 인스턴스로 
 2. URL 유효성 검증 (형식 + http/https 프로토콜만 허용, 최대 2048자)
 3. nanoid로 6자리 랜덤 코드 생성 (a-zA-Z0-9, 약 568억 조합)
 4. 예약 경로와 충돌 검사 (`api`, `_next`, `favicon.ico` 등)
-5. Turso에 저장 → 단축 URL 반환
+5. PostgreSQL에 저장 → 단축 URL 반환
 6. slug 충돌 시 재생성 (최대 3회, 실패 시 에러 로깅 + 500 반환)
 7. 동일 URL 재요청 시 새로운 slug를 생성한다 (1:N 관계 허용)
 
 ### Redirect
 
 1. `qqwe.kr/abc123` 요청 도착
-2. `middleware.ts`에서 경로 판별: 단일 세그먼트 경로(`/xxx`)이고 예약 경로(`/api/*`, `/_next/*`, `/favicon.ico`, `/[slug]/stats`)가 아닌 경우에만 slug로 처리
-3. Turso에서 slug로 원본 URL 조회
+2. `src/app/[slug]/route.ts`에서 slug를 조회한다
+3. PostgreSQL에서 slug로 원본 URL 조회
 4. 원본 URL 존재 → 302 리다이렉트 즉시 반환 (302를 사용하는 이유: 301은 브라우저가 캐싱하여 이후 방문이 서버를 거치지 않아 통계 수집 불가)
-5. Next.js 15 `after()` API로 통계를 비동기 기록 (리다이렉트 응답 이후 실행되어 속도에 영향 없음)
+5. Next.js 16 `after()` API로 통계를 비동기 기록 (리다이렉트 응답 이후 실행되어 속도에 영향 없음)
 6. 원본 URL 없음 → Next.js로 통과 (404 페이지)
 
 ### Analytics Data Collection
@@ -65,7 +64,7 @@ Next.js App Router 풀스택 모놀리스. Railway에서 단일 인스턴스로 
 리다이렉트 시 비동기로 수집하는 항목:
 - 클릭 시각 (UTC로 저장, 프론트엔드에서 사용자 로컬 타임존으로 표시)
 - Referer 헤더
-- 국가: best-effort. Railway/Cloudflare 프록시가 주입하는 geo 헤더 사용, 없으면 null 저장. MVP에서는 외부 IP geolocation API 미사용
+- 국가: best-effort. Vultr Docker Compose/Cloudflare 프록시가 주입하는 geo 헤더 사용, 없으면 null 저장. MVP에서는 외부 IP geolocation API 미사용
 - 디바이스 종류 (desktop/mobile/tablet)
 - 브라우저, OS (ua-parser-js로 User-Agent 파싱)
 

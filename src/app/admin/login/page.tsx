@@ -8,7 +8,7 @@ import { AutoSubmitForm } from "./auto-submit-form";
 
 export default async function AdminLoginPage() {
   if (getAdminAuthSetupIssues().length > 0) {
-    redirect("/admin");
+    redirect("/admin/unauthorized");
   }
 
   const session = await auth();

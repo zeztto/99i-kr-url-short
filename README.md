@@ -4,15 +4,15 @@
 
 운영 도메인: [https://99i.kr](https://99i.kr)
 
-> 현재 GitHub 레포 이름은 기존 히스토리 보존을 위해 `qqwe.kr-url-short`를 유지하고 있으며, 서비스 브랜드는 `99i.kr`로 리브랜딩 중입니다.
-
 ## 프로젝트 개요
 
 - URL을 입력하면 6자리 랜덤 slug를 생성해 짧은 링크를 발급합니다.
 - 짧은 링크가 실제로 열릴 때 302 리디렉션을 수행하고 클릭 데이터를 비동기로 기록합니다.
 - 각 링크마다 별도의 통계 페이지를 제공해 최근 7일 또는 30일 기준 유입 현황을 확인할 수 있습니다.
 - `/admin`에서 Google OAuth 인증 후 전체 링크와 누적 클릭 현황을 일괄 확인할 수 있습니다.
+- admin은 잘못 생성된 링크와 해당 클릭 기록을 삭제할 수 있습니다.
 - 인증 없이 누구나 사용할 수 있는 MVP 구조를 유지하면서도, 기본적인 rate limit과 예약 경로 보호, 선택적 Cloudflare Turnstile 검증을 적용했습니다.
+- 홈페이지에는 `robots.txt`, `sitemap.xml`, Open Graph metadata와 공유 이미지를 제공해 검색엔진 노출과 링크 미리보기를 보강했습니다.
 
 ## 주요 기능
 
@@ -43,6 +43,7 @@
 - `ADMIN_EMAILS`에 명시적으로 등록된 계정만 admin 접근이 가능합니다.
 - 전체 링크 목록, 총 클릭 수, 최근 7일 링크 생성 수, 최근 7일 클릭 수를 한 화면에서 확인할 수 있습니다.
 - 각 링크에서 개별 `/{slug}/stats` 상세 페이지로 바로 이동할 수 있습니다.
+- 삭제 확인 후 링크와 해당 클릭 기록을 함께 제거할 수 있습니다.
 
 ### 5. 기본 보안 장치
 
@@ -83,11 +84,11 @@
 
 관련 파일:
 
-- 배포 compose: [compose.yml](/Users/sungwoonjeon/dev/qqwe.kr-url-short/compose.yml:1)
-- 로컬/범용 compose: [docker-compose.yml](/Users/sungwoonjeon/dev/qqwe.kr-url-short/docker-compose.yml:1)
-- 운영 Caddy 템플릿: [ops/vultr/99i-kr.caddy](/Users/sungwoonjeon/dev/qqwe.kr-url-short/ops/vultr/99i-kr.caddy:1)
-- 보조 Caddy 파일: [infra/caddy/99i.kr.caddy](/Users/sungwoonjeon/dev/qqwe.kr-url-short/infra/caddy/99i.kr.caddy:1)
-- 상세 배포 절차: [ops/vultr/DEPLOY.md](/Users/sungwoonjeon/dev/qqwe.kr-url-short/ops/vultr/DEPLOY.md:1)
+- 배포 compose: [compose.yml](/Users/sungwoonjeon/dev/99i-kr-url-short/compose.yml:1)
+- 로컬/범용 compose: [docker-compose.yml](/Users/sungwoonjeon/dev/99i-kr-url-short/docker-compose.yml:1)
+- 운영 Caddy 템플릿: [ops/vultr/99i-kr.caddy](/Users/sungwoonjeon/dev/99i-kr-url-short/ops/vultr/99i-kr.caddy:1)
+- 보조 Caddy 파일: [infra/caddy/99i.kr.caddy](/Users/sungwoonjeon/dev/99i-kr-url-short/infra/caddy/99i.kr.caddy:1)
+- 상세 배포 절차: [ops/vultr/DEPLOY.md](/Users/sungwoonjeon/dev/99i-kr-url-short/ops/vultr/DEPLOY.md:1)
 
 ## 아키텍처
 
@@ -101,7 +102,7 @@
 6. `302` 리디렉션 응답 반환
 7. 응답 이후 클릭 메타데이터를 비동기로 저장
 8. `/{slug}/stats` 또는 `/api/stats/[slug]`에서 통계 집계 조회
-9. `/admin`에서 Google OAuth 인증 후 전체 링크/클릭 현황 조회
+9. `/admin`에서 Google OAuth 인증 후 전체 링크/클릭 현황 조회 및 삭제
 
 ## 데이터 모델
 
@@ -162,7 +163,7 @@
 
 ## 환경 변수
 
-기본 템플릿은 [.env.example](/Users/sungwoonjeon/dev/qqwe.kr-url-short/.env.example:1) 를 사용합니다.
+기본 템플릿은 [.env.example](/Users/sungwoonjeon/dev/99i-kr-url-short/.env.example:1) 를 사용합니다.
 
 주요 값:
 
@@ -198,6 +199,7 @@ TURNSTILE_SECRET_KEY=your-secret-key
 - 기존 키 이름인 `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`도 호환됩니다.
 - `TURNSTILE_ENABLED=false`면 Turnstile을 비활성화할 수 있습니다.
 - `TURNSTILE_EXPECTED_HOSTNAME`은 Turnstile hostname 검증 기준입니다.
+- 로컬에서 Turnstile을 검증할 때는 Cloudflare test key를 쓰거나 Cloudflare Hostname Management에 `localhost`를 추가해야 합니다. 운영 sitekey는 `99i.kr`만 허용하는 구성이 권장됩니다.
 
 Google OAuth redirect URI:
 
@@ -234,7 +236,7 @@ npm run dev
 
 ## 데이터베이스 반영
 
-Drizzle 설정은 [drizzle.config.ts](/Users/sungwoonjeon/dev/qqwe.kr-url-short/drizzle.config.ts:1) 에 있으며, PostgreSQL을 대상으로 사용합니다.
+Drizzle 설정은 [drizzle.config.ts](/Users/sungwoonjeon/dev/99i-kr-url-short/drizzle.config.ts:1) 에 있으며, PostgreSQL을 대상으로 사용합니다.
 
 ```bash
 npm run db:generate
@@ -244,13 +246,13 @@ npm run db:init
 
 ## Vultr 배포 메모
 
-- 실제 운영 compose는 [compose.yml](/Users/sungwoonjeon/dev/qqwe.kr-url-short/compose.yml:1) 기준입니다.
+- 실제 운영 compose는 [compose.yml](/Users/sungwoonjeon/dev/99i-kr-url-short/compose.yml:1) 기준입니다.
 - 운영 env 파일명은 `.env.production` 입니다.
 - `compose.yml` 실행 시에는 반드시 `docker compose --env-file .env.production -f compose.yml ...` 형식을 사용해야 `${DB_*}` 값이 정상 치환됩니다.
 - Caddy가 연결할 수 있도록 앱 컨테이너는 외부 network `i99-kr_default` 에 붙어야 합니다.
 - Caddy site config는 `99i.kr -> i99-kr-app:3000` 을 유지해야 합니다.
-- 반복 배포는 [ops/vultr/deploy.sh](/Users/sungwoonjeon/dev/qqwe.kr-url-short/ops/vultr/deploy.sh:1) 로 실행할 수 있습니다.
-- 배포 전후 절차는 [ops/vultr/DEPLOY.md](/Users/sungwoonjeon/dev/qqwe.kr-url-short/ops/vultr/DEPLOY.md:1) 를 따릅니다.
+- 반복 배포는 [ops/vultr/deploy.sh](/Users/sungwoonjeon/dev/99i-kr-url-short/ops/vultr/deploy.sh:1) 로 실행할 수 있습니다.
+- 배포 전후 절차는 [ops/vultr/DEPLOY.md](/Users/sungwoonjeon/dev/99i-kr-url-short/ops/vultr/DEPLOY.md:1) 를 따릅니다.
 
 ## 테스트
 

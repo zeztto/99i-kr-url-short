@@ -1,3 +1,5 @@
+import { isIP } from "node:net";
+
 interface VerifyTurnstileTokenOptions {
   token?: string | null;
   remoteIp?: string | null;
@@ -9,6 +11,12 @@ interface TurnstileSiteVerifyResponse {
   hostname?: string;
   "error-codes"?: string[];
 }
+
+const TURNSTILE_TEST_SECRET_KEYS = new Set([
+  "1x0000000000000000000000000000000AA",
+  "2x0000000000000000000000000000000AA",
+  "3x0000000000000000000000000000000AA",
+]);
 
 export interface TurnstileVerificationResult {
   success: boolean;
@@ -41,6 +49,15 @@ function normalizeHostname(value?: string | null): string | null {
   }
 }
 
+function normalizeRemoteIp(value?: string | null): string | null {
+  const normalized = normalizeValue(value);
+  if (!normalized || !isIP(normalized)) {
+    return null;
+  }
+
+  return normalized;
+}
+
 export function getTurnstileSiteKey(): string | null {
   const siteKey =
     process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ||
@@ -51,6 +68,10 @@ export function getTurnstileSiteKey(): string | null {
 export function getTurnstileSecretKey(): string | null {
   const secretKey = process.env.TURNSTILE_SECRET_KEY?.trim();
   return secretKey || null;
+}
+
+function isTurnstileTestSecretKey(secretKey: string | null): boolean {
+  return Boolean(secretKey && TURNSTILE_TEST_SECRET_KEYS.has(secretKey));
 }
 
 export function getTurnstileExpectedHostname(
@@ -92,7 +113,7 @@ export async function verifyTurnstileToken({
     idempotency_key: crypto.randomUUID(),
   });
 
-  const normalizedRemoteIp = normalizeValue(remoteIp);
+  const normalizedRemoteIp = normalizeRemoteIp(remoteIp);
   if (normalizedRemoteIp) {
     responseBody.set("remoteip", normalizedRemoteIp);
   }
@@ -127,6 +148,7 @@ export async function verifyTurnstileToken({
 
   if (
     result.success &&
+    !isTurnstileTestSecretKey(secretKey) &&
     normalizedExpectedHostname &&
     normalizedReturnedHostname &&
     normalizedExpectedHostname !== normalizedReturnedHostname
